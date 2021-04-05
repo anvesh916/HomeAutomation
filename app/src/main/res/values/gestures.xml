@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="gestures_array">
+        <item>Turn on lights</item>
+        <item>Turn off lights</item>
+        <item>Turn on fan</item>
+        <item>Turn off fan</item>
+        <item>Increase fan speed</item>
+        <item>Decrease fan speed</item>
+        <item>Set Thermostat to temperature</item>
+        <item>Number 0</item>
+        <item>Number 1</item>
+        <item>Number 2</item>
+        <item>Number 3</item>
+        <item>Number 4</item>
+        <item>Number 5</item>
+        <item>Number 6</item>
+        <item>Number 7</item>
+        <item>Number 8</item>
+        <item>Number 9</item>
+    </string-array>
+</resources>
