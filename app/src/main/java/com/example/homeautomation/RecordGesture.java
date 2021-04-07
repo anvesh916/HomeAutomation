@@ -121,6 +121,7 @@ public class RecordGesture extends AppCompatActivity {
         VideoView videoView = findViewById(R.id.videoView);
         videoView.setMediaController(m);
         videoView.setVideoURI(uriForFile);
+        videoView.start();
         videoView.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
             @Override
             public void onPrepared(MediaPlayer mp) {
