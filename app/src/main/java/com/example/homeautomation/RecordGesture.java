@@ -3,12 +3,12 @@ package com.example.homeautomation;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
-
 import android.Manifest;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.media.MediaPlayer;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
@@ -20,15 +20,14 @@ import android.widget.Toast;
 import android.widget.VideoView;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLConnection;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
+import okhttp3.RequestBody;
 
 public class RecordGesture extends AppCompatActivity {
     private Intent mainActivity;
@@ -39,6 +38,7 @@ public class RecordGesture extends AppCompatActivity {
     public int practiceNumber = 0;
     public String fileName = "";
     private Uri uriForFile;
+    ProgressDialog progressDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,6 +48,9 @@ public class RecordGesture extends AppCompatActivity {
         mainActivity = new Intent(this, MainActivity.class);
 
       this.updateData();
+
+        progressDialog = new ProgressDialog(this);
+        progressDialog.setMessage("Uploading...");
 
     }
 
@@ -62,11 +65,11 @@ public class RecordGesture extends AppCompatActivity {
                 if (recName.contains(model.getGestures(gestureNumber))) {
                     count = count + 1;
                 }
+
             }
         }
         TextView recordingText = findViewById(R.id.textView);
         recordingText.setText( "Available Recordings: "+ count+"/3");
-        practiceNumber = (count) % 3;
     }
 
 
@@ -100,9 +103,7 @@ public class RecordGesture extends AppCompatActivity {
     public void startRecording() {
         GestureModel model = new GestureModel();
         File videoPath = getExternalFilesDir(Environment.getStorageDirectory().getAbsolutePath());
-
-        fileName = model.getGestures(gestureNumber) + "_PRACTICE_"+ (practiceNumber + 1) +"_VOONA.mp4";
-        File mediaFile = new File(videoPath, fileName);
+        File mediaFile = new File(videoPath, getFileName(practiceNumber));
         uriForFile = FileProvider.getUriForFile(this, getApplicationContext().getPackageName() + ".provider", mediaFile);
 
         Intent takeVideoIntent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
@@ -120,12 +121,21 @@ public class RecordGesture extends AppCompatActivity {
         VideoView videoView = findViewById(R.id.videoView);
         videoView.setMediaController(m);
         videoView.setVideoURI(uriForFile);
+        videoView.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+            @Override
+            public void onPrepared(MediaPlayer mp) {
+                mp.setLooping(true);
+            }
+        });
+    }
+    public void navToMain() {
+        startActivity(mainActivity);
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
         if (requestCode == VIDEO_CAPTURE && resultCode == RESULT_OK) {
-            Toast.makeText(this, fileName + " Saved Successfully !!", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, getFileName(practiceNumber) + " Saved Successfully !!", Toast.LENGTH_LONG).show();
             practiceNumber = (practiceNumber + 1) % 3;
             this.showPreview();
             this.updateData();
@@ -135,100 +145,100 @@ public class RecordGesture extends AppCompatActivity {
         }
     }
 
-    public void navToMain(View view) {
-        startActivity(mainActivity);
+    public String getFileName(int num) {
+        GestureModel model = new GestureModel();
+        return model.getGestures(gestureNumber) + "_PRACTICE_"+ (num + 1) +"_VOONA.mp4";
     }
 
-    public void recordVideo(View view) {
+    public void upload(View view) {
+            progressDialog.show();
+            progressDialog.setMessage("Uploading....");
+            this.uploadMultipleFiles();
+    }
+
+    private void uploadMultipleFiles() {
+        File videoPath = getExternalFilesDir(Environment.getStorageDirectory().getAbsolutePath());
+        File file1 = new File(videoPath, getFileName(0));
+        File file2 = new File(videoPath, getFileName(1));
+        File file3 = new File(videoPath, getFileName(2));
+
+        MultipartBody.Part fileToUpload1 = MultipartBody.Part.createFormData(file1.getName(),
+                file1.getName(), RequestBody.create(MediaType.parse("*/*"), file1));
+        MultipartBody.Part fileToUpload2 = MultipartBody.Part.createFormData(file2.getName(),
+                file2.getName(), RequestBody.create(MediaType.parse("*/*"), file2));
+        MultipartBody.Part fileToUpload3 = MultipartBody.Part.createFormData(file3.getName(),
+                file3.getName(), RequestBody.create(MediaType.parse("*/*"), file3));
+        ApiConfig getResponse = AppConfig.getRetrofit().create(ApiConfig.class);
+        Call<ServerResponse> call = getResponse.uploadMulFile(fileToUpload1, fileToUpload2, fileToUpload3);
+        call.enqueue(new Callback<ServerResponse>() {
+            @Override
+            public void onResponse(Call<ServerResponse> call, Response<ServerResponse> response) {
+                ServerResponse serverResponse = response.body();
+                if (serverResponse != null) {
+                    if (serverResponse.getSuccess()) {
+                        Toast.makeText(getApplicationContext(), serverResponse.getMessage(), Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(getApplicationContext(), serverResponse.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    assert serverResponse != null;
+                    Log.v("Response", serverResponse.toString());
+                }
+                navToMain();
+                progressDialog.dismiss();
+            }
+
+            @Override
+            public void onFailure(Call<ServerResponse> call, Throwable t) {
+                progressDialog.dismiss();
+                navToMain();
+            }
+        });
+    }
+
+    public void uploadVideo(String name) {
+        File videoPath = getExternalFilesDir(Environment.getStorageDirectory().getAbsolutePath());
+        File file = new File(videoPath, name);
+
+
+        // Parsing any Media type file
+        RequestBody requestBody = RequestBody.create(MediaType.parse("*/*"), file);
+        MultipartBody.Part fileToUpload = MultipartBody.Part.createFormData(file.getName(), file.getName(), requestBody);
+        RequestBody filename = RequestBody.create(MediaType.parse("video/mp4"), file.getName());
+
+        ApiConfig getResponse = AppConfig.getRetrofit().create(ApiConfig.class);
+        Call<ServerResponse> call = getResponse.uploadFile(fileToUpload, filename);
+        call.enqueue(new Callback<ServerResponse>() {
+
+            @Override
+            public void onFailure(Call<ServerResponse> call, Throwable t) {
+                Toast.makeText(getApplicationContext(), "Upload Failed", Toast.LENGTH_SHORT).show();
+                progressDialog.dismiss();
+            }
+
+
+            @Override
+            public void onResponse(Call<ServerResponse> call, Response<ServerResponse> response) {
+                ServerResponse serverResponse = response.body();
+                if (serverResponse != null) {
+                    if (serverResponse.getSuccess()) {
+                        Toast.makeText(getApplicationContext(), serverResponse.getMessage(), Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(getApplicationContext(), serverResponse.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    assert serverResponse != null;
+                    Log.v("Response", serverResponse.toString());
+                }
+                progressDialog.dismiss();
+            }
+
+        });
+    }
+
+    public void recordVideo(View view)
+    {
         this.preInvokeCamera();
     }
 
-    public class UploadTask extends AsyncTask<String, String, String> {
-
-        @Override
-        protected String doInBackground(String... strings) {
-            try {
-                String url = "http://10.218.107.121/cse535/upload_video.php";
-                String charset = "UTF-8";
-                String group_id = "20";
-                String ASUid = "1219792743";
-                String accept = "1";
-                File videoPath = getExternalFilesDir(Environment.getStorageDirectory().getAbsolutePath());
-                File videoFile = new File(videoPath, fileName);
-                String boundary = Long.toHexString(System.currentTimeMillis());
-                String CRLF = "\r\n"; // Line separator required by multipart/form-data.
-
-                URLConnection connection;
-
-                connection = new URL(url).openConnection();
-                connection.setDoOutput(true);
-                connection.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
-
-                try (
-                        OutputStream output = connection.getOutputStream();
-                        PrintWriter writer = new PrintWriter(new OutputStreamWriter(output, charset), true);
-                ) {
-                    // Send normal accept.
-                    writer.append("--" + boundary).append(CRLF);
-                    writer.append("Content-Disposition: form-data; name=\"accept\"").append(CRLF);
-                    writer.append("Content-Type: text/plain; charset=" + charset).append(CRLF);
-                    writer.append(CRLF).append(accept).append(CRLF).flush();
-
-                    // Send normal accept.
-                    writer.append("--" + boundary).append(CRLF);
-                    writer.append("Content-Disposition: form-data; name=\"id\"").append(CRLF);
-                    writer.append("Content-Type: text/plain; charset=" + charset).append(CRLF);
-                    writer.append(CRLF).append(ASUid).append(CRLF).flush();
-
-                    // Send normal accept.
-                    writer.append("--" + boundary).append(CRLF);
-                    writer.append("Content-Disposition: form-data; name=\"group_id\"").append(CRLF);
-                    writer.append("Content-Type: text/plain; charset=" + charset).append(CRLF);
-                    writer.append(CRLF).append(group_id).append(CRLF).flush();
-
-                    // Send video file.
-                    writer.append("--" + boundary).append(CRLF);
-                    writer.append("Content-Disposition: form-data; name=\"uploaded_file\"; filename=\"" + videoFile.getName() + "\"").append(CRLF);
-                    writer.append("Content-Type: video/mp4; charset=" + charset).append(CRLF); // Text file itself must be saved in this charset!
-                    writer.append(CRLF).flush();
-                    FileInputStream vf = new FileInputStream(videoFile);
-                    try {
-                        byte[] buffer = new byte[1024];
-                        int bytesRead = 0;
-                        while ((bytesRead = vf.read(buffer, 0, buffer.length)) >= 0)
-                        {
-                            output.write(buffer, 0, bytesRead);
-                        }
-                    }catch (Exception exception)
-                    {
-                        Log.d("Error", String.valueOf(exception));
-                        publishProgress(String.valueOf(exception));
-                    }
-                    output.flush(); // Important before continuing with writer!
-                    writer.append(CRLF).flush(); // CRLF is important! It indicates end of boundary.
-                    writer.append("--" + boundary + "--").append(CRLF).flush();
-                } catch (UnsupportedEncodingException e) {
-                    e.printStackTrace();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-
-                // Request is lazily fired whenever you need to obtain information about response.
-                int responseCode = ((HttpURLConnection) connection).getResponseCode();
-                System.out.println(responseCode); // Should be 200
-
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            return null;
-        }
-
-
-        @Override
-        protected void onProgressUpdate(String... text) {
-            Toast.makeText(getApplicationContext(), "In Background Task " + text[0], Toast.LENGTH_LONG).show();
-        }
-
-    }
 }

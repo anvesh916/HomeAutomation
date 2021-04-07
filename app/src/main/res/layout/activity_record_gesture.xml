@@ -12,7 +12,7 @@
         android:layout_height="60dp"
         android:layout_marginEnd="40dp"
         android:layout_marginRight="40dp"
-        android:onClick="navToMain"
+        android:onClick="upload"
         android:text="Upload"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
