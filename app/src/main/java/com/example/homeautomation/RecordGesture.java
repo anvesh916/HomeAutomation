@@ -70,6 +70,9 @@ public class RecordGesture extends AppCompatActivity {
         }
         TextView recordingText = findViewById(R.id.textView);
         recordingText.setText( "Available Recordings: "+ count+"/3");
+        TextView gestureName = findViewById(R.id.gestureName);
+        String[] gestureArray = getResources().getStringArray(R.array.gestures_array);
+        gestureName.setText( gestureArray[gestureNumber]);
     }
 
 
@@ -101,7 +104,6 @@ public class RecordGesture extends AppCompatActivity {
     }
 
     public void startRecording() {
-        GestureModel model = new GestureModel();
         File videoPath = getExternalFilesDir(Environment.getStorageDirectory().getAbsolutePath());
         File mediaFile = new File(videoPath, getFileName(practiceNumber));
         uriForFile = FileProvider.getUriForFile(this, getApplicationContext().getPackageName() + ".provider", mediaFile);

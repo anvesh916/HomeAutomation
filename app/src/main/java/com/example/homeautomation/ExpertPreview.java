@@ -12,6 +12,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.view.View;
 import android.widget.MediaController;
+import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.VideoView;
 
@@ -30,7 +31,25 @@ public class ExpertPreview extends AppCompatActivity {
         gestureNumber = this.getIntent().getIntExtra("gesture",0);
         recordGesture = new Intent(this, RecordGesture.class);
         this.requestPermission();
+        this.showData();
     }
+
+    void showData() {
+        TextView gestureName = findViewById(R.id.expGesture);
+        String[] gestureArray = getResources().getStringArray(R.array.gestures_array);
+        gestureName.setText( gestureArray[this.gestureNumber]);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        this.showData();
+        VideoView videoView = findViewById(R.id.video_preview);
+        if(videoView != null) {
+            videoView.start();
+        }
+    }
+
 
 
     private void requestPermission() {
@@ -83,6 +102,8 @@ public class ExpertPreview extends AppCompatActivity {
         recordGesture.putExtra("gesture", gestureNumber);
         startActivity(recordGesture);
     }
+
+
 
     @Override
     protected void onDestroy() {

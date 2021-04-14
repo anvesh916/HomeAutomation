@@ -10,23 +10,22 @@
         android:id="@+id/upload"
         android:layout_width="140dp"
         android:layout_height="60dp"
-        android:layout_marginEnd="40dp"
-        android:layout_marginRight="40dp"
+        android:layout_marginEnd="48dp"
         android:onClick="upload"
         android:text="Upload"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/videoView"
-        app:layout_constraintVertical_bias="0.148" />
+        app:layout_constraintVertical_bias="0.112" />
 
     <VideoView
         android:id="@+id/videoView"
-        android:layout_width="361dp"
-        android:layout_height="558dp"
-        android:layout_marginTop="32dp"
+        android:layout_width="311dp"
+        android:layout_height="487dp"
+        android:layout_marginTop="16dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@+id/gestureName" />
 
     <Button
         android:id="@+id/button3"
@@ -37,10 +36,10 @@
         app:backgroundTint="#4CAF50"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/upload"
-        app:layout_constraintHorizontal_bias="0.493"
+        app:layout_constraintHorizontal_bias="0.578"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/videoView"
-        app:layout_constraintVertical_bias="0.148" />
+        app:layout_constraintVertical_bias="0.112" />
 
     <TextView
         android:id="@+id/textView"
@@ -49,9 +48,20 @@
         android:text="Available Recordings: 0/3"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.16"
+        app:layout_constraintHorizontal_bias="0.191"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/button3"
-        app:layout_constraintVertical_bias="0.4" />
+        app:layout_constraintVertical_bias="0.098" />
+
+    <TextView
+        android:id="@+id/gestureName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Gesture Name"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.498"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
